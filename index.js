@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
-//const axios = require('axios');
 const TelegramBot = require('node-telegram-bot-api');
+const axios = require('axios');
+const https = require('https');
 
 // Настройка Google Sheets API
 const sheets = google.sheets('v4');
@@ -12,6 +13,33 @@ const auth = new google.auth.GoogleAuth({
 // Настройка Telegram Bot
 const token = '7906410073:AAFNmNWAW4G4Uj1QWt_uKtAIKPlnrZEJUo0'; // Замените на ваш токен
 const bot = new TelegramBot(token, { polling: true });
+
+// Конфигурация для доступа к GigaChat
+const authKey = 'Basic NmY4OGE4ZGMtN2FhYy00NTQzLWEyNjAtYjFmODY1NzM3NjhmOmNjYTIxZWM4LThkMjUtNDc3Yy04OGJmLTU5ZmRhYjEzMzg0Ng=='; // Ваш Authorization key для Basic-аутентификации
+const authUrl = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
+const apiUrl = 'https://gigachat.devices.sberbank.ru/api/v1/models';
+const scope = 'GIGACHAT_API_PERS';
+
+// Функция для получения Access Token от GigaChat
+async function getAccessToken() {
+  try {
+    const response = await axios.post(
+      authUrl,
+      new URLSearchParams({ 'scope': encodeURIComponent(scope) }).toString(),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Authorization': authKey,
+        },
+        httpsAgent: new https.Agent({ rejectUnauthorized: false }), // Для самоподписанных сертификатов
+      }
+    );
+    return response.data.access_token; // Вернется Access Token
+  } catch (error) {
+    console.error('Ошибка при получении Access Token:', error.response ? error.response.data : error.message);
+    throw error;
+  }
+}
 
 // Функция для получения данных из Google Sheets
 async function getDataFromSheet() {
@@ -25,55 +53,49 @@ async function getDataFromSheet() {
     range,
   });
 
-  return response.data.values;
+  return response.data.values; // Возвращает массив данных
 }
-// Функция для генерации поздравления с использованием GigaChat
-//
-//
-//
-const https = require('https');
-const axios = require('axios');
 
-// Конфигурация для доступа
-const authKey = 'NmY4OGE4ZGMtN2FhYy00NTQzLWEyNjAtYjFmODY1NzM3NjhmOmNjYTIxZWM4LThkMjUtNDc3Yy04OGJmLTU5ZmRhYjEzMzg0Ng=='; // Ваш Authorization key для Basic-аутентификации (проверьте правильность)
-const authUrl = 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth';
-const apiUrl = 'https://gigachat.devices.sberbank.ru/api/v1/models';
-const scope = 'GIGACHAT_API_PERS';
-
-// Функция для получения Access token
-async function getAccessToken() {
+// Функция для генерации поздравления через GigaChat
+async function generateGreeting(name, position, accessToken) {
   try {
+    const prompt = `Сгенерируй поздравление с днем рождения для ${name}, работающего на позиции ${position}.`;
+
     const response = await axios.post(
-      authUrl,
-      new URLSearchParams({ 'scope': encodeURIComponent(scope) }).toString(),
+      `${apiUrl}/chat`,
+      { prompt }, // Тело запроса
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
-          'Authorization': `Basic ${authKey}`,
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
         },
         httpsAgent: new https.Agent({ rejectUnauthorized: false }), // Для самоподписанных сертификатов
       }
     );
-    console.log('Access token response:', response.data); // Для отладки
-    return response.data.access_token; // Вернется Access token
+
+    return response.data.message; // Возвращаем сгенерированное поздравление
   } catch (error) {
-    // Выводим больше информации об ошибке
-    console.error('Ошибка при получении Access token:', error.response ? error.response.data : error.message);
-    console.error('Полный ответ сервера:', error.response ? error.response : error);
+    console.error('Ошибка при генерации поздравления:', error.response ? error.response.data : error.message);
     throw error;
   }
 }
 
-// Основная функция для работы с Google Sheets и отправки поздравлений
+// Основная функция для получения данных из Sheets, генерации поздравления и отправки его в Telegram
 async function main() {
   try {
-    const accessToken = await getAccessToken(); // Получаем Access token
+    const accessToken = await getAccessToken(); // Получаем Access Token
     console.log('Access token получен:', accessToken);
-    
-    // Пример использования accessToken
-    const greeting = await generateGreeting('Иван Иванов', 'Менеджер', accessToken);
-    console.log(greeting);
+
+    const data = await getDataFromSheet(); // Получаем данные из Google Sheets
+    const name = data[0][0]; // Предположим, что имя хранится в первом столбце
+    const position = data[0][1]; // Предположим, что должность во втором столбце
+
+    const greeting = await generateGreeting(name, position, accessToken); // Генерируем поздравление
+    console.log('Сгенерированное поздравление:', greeting);
+
+    // Отправляем поздравление в Telegram
+    const chatId = '<your_chat_id>'; // Замените на ID чата или группы
+    bot.sendMessage(chatId, greeting); // Отправляем сообщение в чат
   } catch (error) {
     console.error('Ошибка в процессе выполнения:', error);
   }
