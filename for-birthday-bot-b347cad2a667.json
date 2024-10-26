@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "for-birthday-bot",
+  "private_key_id": "b347cad2a6676bff22db9750ed7bd6b42b1cdf23",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQD2tLUBPqK7aA/S\n3ovnSep/Q9NEpZsFSNxqcwoIca20v1UwlQSLrpPD7lOOvM+c8kpdf4Pw990O22O4\nIoSZ9yPbGm16vX8jXky8gT3M5gieMX5qK5t0Bf6y1wnoRLz21Yo3CkS4ioAC2Jfr\n7HwIS5k3i5Ew6qALYLOv72uy4r3zw957srep+UWTTaNQki9H+/VUcUSyVphonV6O\nUnpTnEkob8ak0dQ+atbGnrGii9Qil1qePKykn07Ke+3uuMANu7fXff6r9i0XS8Cx\nz1b+01Zds/src0Wju+RvendhnNbXfDqCLRvukIfS4ZoZ++4203PZi96/07m3F4cg\nt/SXe62LAgMBAAECggEAANnzy/V4NfcFzZ+op5uDhyfn7pM3EJLFS/VqAfMeey1e\nhmSP7PQlHLvRpwBIzneu666ueQzp7YyymzvnQultmBUkbpQr1aaUKOG19w3jgWRA\nqu4hQwpoQXFo3oJ/jRyEixcVJfaNut9zesQd/iCrU9vpRtwbFvRLpR5JkVxN9S2P\nTBU7bVsRtiYF6WV+9/9E6k9bQZC0hSbBuBwjRooqaEG2Ra/rbgZG6B97TH5F/780\nLY0df31+z/60HVWqPv1HXLaVkQ4Z3yzawmrUyOGa0LXxfE9WXDoE5c45ZtZsea6T\n1FYAFCKyAHz3XLHV1SoInwrxkPWpNydeV5fo3sDRQQKBgQD+aLn9lRgLJC52Up5Z\nLwvhKH+7il/NUh3UrNqpIa4cwZ7XkUstYsYQVHWDehmRw2W64Jo7NnmFLX8tldE3\nOlUxPi2jPUcAjwHEC83Aer33H0I5NBiR14E7arpWiUI77NteuzJeHoTZxmpSBEzn\nCqdlqA4BEm5kVLUFu73Hkf57wQKBgQD4P6YWC0NAOXfGFFFfEO8LyAcn5ou7NwKb\n9B4mE291r7B0AEFIyLuuCNTAxMGwtb5xa84njFbfIWcG3BP3AxnppmQ54iNHAhcf\n/vJ0sg0JncxG3hY3yAbUOsFnJGOu+4wYDhroq+RI6Zn5bG25QpWQ157BrYQTAACZ\nlb3ZQ7hsSwKBgQC+a2qS2C6H4Ev6ejpVbHZK0AJTP+4XAxia38pGf5QPqAiZNwH6\n9YxkGqNehlxvEr6pEoW+PjbUrModN57B5KJxWiXUof/r9h4PO/qD0Bsxxa7OnCSr\nvI7ZBzhznwb5TX6guCKp+dPcILvhqaBZ6kqDNzdMLBx+cjyQDwasQqUkwQKBgQDD\nKi7ll7coT8XFGQYb6hE0vu45RTvHVGkduF7XamIvMI9VszmgAgfiu5ifcFAiH8/4\nFVv+pYtKYlVABFdB09NUaHbVNt6rHY6WnfV5Ht23GLKXaFQpSH1t7j9MWkRwNdye\nsMAg+bpARD7D46WjhyBUvd9WvpZd5ZuTIzEdFOtxXwKBgQDZKmx8ls91wpY98kQ4\nxU8W3JPHITr6rs7XX6PmPRh8zGGzqwn2Yiq8Mde6nsvXm7Uw+lVjH4v7/HlapFRA\n2PTMzg9K6WVyLDWerjbZKTL2HyXiSdXmDCixAgGOIg4JSl/3Uz4YVMKvurd72wRN\nTOvDhLrsdtlZwcKfJ3CJ96J37Q==\n-----END PRIVATE KEY-----\n",
+  "client_email": "birthday-bot-sa@for-birthday-bot.iam.gserviceaccount.com",
+  "client_id": "113472932299995633838",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/birthday-bot-sa%40for-birthday-bot.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
