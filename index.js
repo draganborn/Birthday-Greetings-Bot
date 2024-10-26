@@ -94,7 +94,7 @@ async function main() {
     console.log('Сгенерированное поздравление:', greeting);
 
     // Отправляем поздравление в Telegram
-    const chatId = '<your_chat_id>'; // Замените на ID чата или группы
+    const chatId = '-4040312841'; // Замените на ID чата или группы
     bot.sendMessage(chatId, greeting); // Отправляем сообщение в чат
   } catch (error) {
     console.error('Ошибка в процессе выполнения:', error);
