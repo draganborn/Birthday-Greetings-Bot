@@ -1,3 +1,6 @@
+// Запрос на получение Access Token
+
+// Импорт необходимых модулей
 const axios = require('axios');
 const qs = require('qs');
 const https = require('https');
