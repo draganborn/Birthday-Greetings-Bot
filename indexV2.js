@@ -20,7 +20,7 @@ const bot = new TelegramBot(token, { polling: true });
 async function getDataFromSheet() {
   const client = await auth.getClient();
   const spreadsheetId = '1OZwZapUykBgTBt9sRgMfodzl9F1aBar-ILIwvv7GKlI'; // Замените на ID вашей таблицы
-  const range = 'page1!A2:D2'; // Укажите диапазон, который хотите получить
+  const range = 'page1!A2:E101'; // Укажите диапазон, который хотите получить
 
   const response = await sheets.spreadsheets.values.get({
     auth: client,
@@ -135,6 +135,17 @@ function getAnswerFromModel(accessToken, message) {
     });
 }
 
+// Функция для проверки, наступает ли день рождения через 3 дня
+function isBirthdayInThreeDays(birthday) {
+  const today = new Date();
+  const birthdayDate = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate());
+  const threeDaysFromNow = new Date(today);
+  threeDaysFromNow.setDate(today.getDate() + 3);
+
+  return birthdayDate.getDate() === threeDaysFromNow.getDate() && birthdayDate.getMonth() === threeDaysFromNow.getMonth();
+}
+
+// Функция для генерации поздравления через GigaChat
 async function generateGreeting(name, position) {
   try {
     // Получаем Access Token
@@ -160,25 +171,30 @@ async function generateGreeting(name, position) {
   }
 }
 
-
 // Функция для отправки сообщения в Telegram
 async function sendMessageToTelegram(chatId, message) {
   await bot.sendMessage(chatId, message);
 }
 
-// Запускаем скрипт
+// Запуск скрипта
 getDataFromSheet()
   .then(async (data) => {
-    console.log(data);
+    const today = new Date();
+    
+    data.forEach(async (row) => {
+      const [name, position, , birthdayStr, chatId] = row;
 
-    // Получаем имя, должность и chatId из данных Google Sheets
-    const [name, position, chatId] = data[0];
+      // Проверяем, заполнены ли необходимые ячейки
+      if (name && position && birthdayStr && chatId) {
+        const birthdayParts = birthdayStr.split('.');
+        const birthday = new Date(today.getFullYear(), birthdayParts[1] - 1, birthdayParts[0]);
 
-    // Генерируем поздравление с помощью GigaChat
-    const greeting = await generateGreeting(name, position);
-
-    // Отправляем сообщение в Telegram
-    sendMessageToTelegram(chatId, greeting);
+        if (isBirthdayInThreeDays(birthday)) {
+          const greeting = await generateGreeting(name, position);
+          sendMessageToTelegram(chatId, greeting);
+        }
+      }
+    });
   })
   .catch(error => {
     console.error('Ошибка при получении данных:', error);
