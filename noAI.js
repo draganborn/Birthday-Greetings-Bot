@@ -1,3 +1,5 @@
+process.emitWarning = () => {};
+
 const { google } = require('googleapis');
 const TelegramBot = require('node-telegram-bot-api');
 
@@ -16,7 +18,7 @@ const bot = new TelegramBot(token, { polling: true });
 async function getDataFromSheet() {
   const client = await auth.getClient();
   const spreadsheetId = '1OZwZapUykBgTBt9sRgMfodzl9F1aBar-ILIwvv7GKlI'; // Замените на ID вашей таблицы
-  const range = 'page1!A2:E101'; // Укажите диапазон, который хотите получить
+  const range = 'page1!A2:E21'; // Укажите диапазон, который хотите получить
 
   const response = await sheets.spreadsheets.values.get({
     auth: client,

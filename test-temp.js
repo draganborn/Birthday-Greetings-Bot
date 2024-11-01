@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
 const axios = require('axios');
 const TelegramBot = require('node-telegram-bot-api');
+const cron = require('node-cron');
 const qs = require('qs');
 const https = require('https');
 const fs = require('fs');
@@ -176,27 +177,30 @@ async function sendMessageToTelegram(chatId, message) {
   await bot.sendMessage(chatId, message);
 }
 
-// Запуск скрипта
-getDataFromSheet()
-  .then(async (data) => {
-    const today = new Date();
-    
-    data.forEach(async (row) => {
-      const [name, position, , birthdayStr, chatId] = row;
+// Запускаем задачу каждый день в 23:00 по московскому времени
+cron.schedule('0 23 * * *', () => {
+  const moscowTime = new Date().toLocaleString("en-US", { timeZone: "Europe/Moscow" });
+  const currentDate = new Date(moscowTime);
 
-      // Проверяем, заполнены ли необходимые ячейки
-      if (name && position && birthdayStr && chatId) {
-        const birthdayParts = birthdayStr.split('.');
-        const birthday = new Date(today.getFullYear(), birthdayParts[1] - 1, birthdayParts[0]);
+  // Проверяем таблицу на дни рождения через 3 дня
+  getDataFromSheet()
+    .then(async (data) => {
+      data.forEach(async (row) => {
+        const [name, position, , birthdayStr, chatId] = row;
 
-        if (isBirthdayInThreeDays(birthday)) {
-          const greeting = await generateGreeting(name, position);
-          sendMessageToTelegram(chatId, greeting);
+        // Проверяем, заполнены ли необходимые ячейки
+        if (name && position && birthdayStr && chatId) {
+          const birthdayParts = birthdayStr.split('.');
+          const birthday = new Date(currentDate.getFullYear(), birthdayParts[1] - 1, birthdayParts[0]);
+
+          if (isBirthdayInThreeDays(birthday)) {
+            const greeting = await generateGreeting(name, position);
+            sendMessageToTelegram(chatId, greeting);
+          }
         }
-      }
+      });
+    })
+    .catch(error => {
+      console.error('Ошибка при получении данных:', error);
     });
-  })
-  .catch(error => {
-    console.error('Ошибка при получении данных:', error);
-  });
-
+});
