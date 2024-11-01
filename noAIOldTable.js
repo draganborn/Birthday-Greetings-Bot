@@ -1,6 +1,5 @@
-//process.emitWarning = () => {};
-
 const { google } = require('googleapis');
+const axios = require('axios');
 const TelegramBot = require('node-telegram-bot-api');
 
 // Настройка Google Sheets API
@@ -18,7 +17,7 @@ const bot = new TelegramBot(token, { polling: true });
 async function getDataFromSheet() {
   const client = await auth.getClient();
   const spreadsheetId = '1OZwZapUykBgTBt9sRgMfodzl9F1aBar-ILIwvv7GKlI'; // Замените на ID вашей таблицы
-  const range = 'page1!A2:E21'; // Укажите диапазон, который хотите получить
+  const range = 'page1!A2:D2'; // Укажите диапазон, который хотите получить
 
   const response = await sheets.spreadsheets.values.get({
     auth: client,
@@ -39,36 +38,17 @@ async function sendMessageToTelegram(chatId, message) {
   await bot.sendMessage(chatId, message);
 }
 
-// Функция для проверки, наступает ли день рождения через 3 дня
-function isBirthdayInThreeDays(birthday) {
-  const today = new Date();
-  const birthdayDate = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate());
-  const threeDaysFromNow = new Date(today);
-  threeDaysFromNow.setDate(today.getDate() + 3);
-
-  return birthdayDate.getDate() === threeDaysFromNow.getDate() && birthdayDate.getMonth() === threeDaysFromNow.getMonth();
-}
-
 // Пример использования
 getDataFromSheet()
   .then(data => {
-    const today = new Date(); // Определяем today здесь
-    data.forEach(row => {
-      const [name, position, , birthdayStr, chatId] = row;
+    console.log(data);
+    // Здесь вы можете добавить логику для генерации поздравлений и отправки их в Telegram
 
-      // Проверяем, заполнены ли необходимые ячейки
-      if (name && position && birthdayStr && chatId) {
-        const birthdayParts = birthdayStr.split('.');
-        const birthday = new Date(today.getFullYear(), birthdayParts[1] - 1, birthdayParts[0]); // Предполагаем формат ДД.ММ
-
-        if (isBirthdayInThreeDays(birthday)) {
-          const greeting = generateGreeting(name, position);
-          sendMessageToTelegram(chatId, greeting);
-        }
-      }
-    });
+    // Пример: отправка поздравления в Telegram
+    const [name, position, chatId] = data[0];
+    const greeting = generateGreeting(name, position);
+    sendMessageToTelegram(chatId, greeting);
   })
   .catch(error => {
     console.error('Ошибка при получении данных:', error);
   });
-
