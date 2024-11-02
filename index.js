@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
 const axios = require('axios');
 const TelegramBot = require('node-telegram-bot-api');
+const cron = require('node-cron');
 const qs = require('qs');
 const https = require('https');
 const fs = require('fs');
@@ -20,7 +21,7 @@ const bot = new TelegramBot(token, { polling: true });
 async function getDataFromSheet() {
   const client = await auth.getClient();
   const spreadsheetId = '1OZwZapUykBgTBt9sRgMfodzl9F1aBar-ILIwvv7GKlI'; // Замените на ID вашей таблицы
-  const range = 'page1!A2:E21'; // Укажите диапазон, который хотите получить
+  const range = 'page1!A2:E101'; // Получаем данные со 2 по 101 строку
 
   const response = await sheets.spreadsheets.values.get({
     auth: client,
@@ -136,13 +137,18 @@ function getAnswerFromModel(accessToken, message) {
 }
 
 // Функция для проверки, наступает ли день рождения через 3 дня
-function isBirthdayInThreeDays(birthday) {
+function isBirthdayInThreeDays(birthdayStr) {
   const today = new Date();
-  const birthdayDate = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate());
+  const [day, month] = birthdayStr.split('.').map(Number); // Разбиваем дату на день и месяц
+  const birthdayThisYear = new Date(today.getFullYear(), month - 1, day); // Создаем дату без учета года рождения
+
   const threeDaysFromNow = new Date(today);
   threeDaysFromNow.setDate(today.getDate() + 3);
 
-  return birthdayDate.getDate() === threeDaysFromNow.getDate() && birthdayDate.getMonth() === threeDaysFromNow.getMonth();
+  return (
+    birthdayThisYear.getDate() === threeDaysFromNow.getDate() &&
+    birthdayThisYear.getMonth() === threeDaysFromNow.getMonth()
+  );
 }
 
 // Функция для генерации поздравления через GigaChat
@@ -171,32 +177,38 @@ async function generateGreeting(name, position) {
   }
 }
 
-// Функция для отправки сообщения в Telegram
-async function sendMessageToTelegram(chatId, message) {
-  await bot.sendMessage(chatId, message);
+// Функция для отправки сообщения в Telegram с задержкой
+async function sendMessageToTelegramWithDelay(chatId, message, delay) {
+  return new Promise(resolve => setTimeout(resolve, delay)).then(() => bot.sendMessage(chatId, message));
 }
 
-// Запуск скрипта
-getDataFromSheet()
-  .then(async (data) => {
+// Основная функция для отправки поздравлений
+async function sendBirthdayGreetings() {
+  try {
+    const data = await getDataFromSheet();
     const today = new Date();
-    
-    data.forEach(async (row) => {
+
+    for (const row of data) {
       const [name, position, , birthdayStr, chatId] = row;
 
-      // Проверяем, заполнены ли необходимые ячейки
       if (name && position && birthdayStr && chatId) {
-        const birthdayParts = birthdayStr.split('.');
-        const birthday = new Date(today.getFullYear(), birthdayParts[1] - 1, birthdayParts[0]);
-
-        if (isBirthdayInThreeDays(birthday)) {
+        if (isBirthdayInThreeDays(birthdayStr)) {
           const greeting = await generateGreeting(name, position);
-          sendMessageToTelegram(chatId, greeting);
+          await sendMessageToTelegramWithDelay(chatId, greeting, 1000); // Отправляем с задержкой 1 секунда
         }
       }
-    });
-  })
-  .catch(error => {
+    }
+  } catch (error) {
     console.error('Ошибка при получении данных:', error);
-  });
+  }
+}
+
+// Планируем задачу на каждый день в 16:30 по калининградскому времени
+cron.schedule('30 16 * * *', () => {
+  console.log('Запуск задачи для отправки поздравлений с днем рождения...');
+  sendBirthdayGreetings();
+}, {
+  scheduled: true,
+  timezone: "Europe/Kaliningrad" // Часовой пояс Калининграда
+});
 
