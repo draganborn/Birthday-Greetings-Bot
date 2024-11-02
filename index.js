@@ -102,7 +102,7 @@ function getAnswerFromModel(accessToken, message) {
     "messages": [
       {
         "role": "system",
-        "content": "Ты доброжелательный hr специалист в сети ресторанов и кафе."
+        "content": "Ты доброжелательный hr специалист в компании Britanca project самой крупной компании Калининграда в сфере хорека."
       },
       {
         "role": "user",
@@ -162,7 +162,7 @@ async function generateGreeting(name, position) {
     await getListOfModels(accessToken);
 
     // Формируем сообщение для модели
-    const message = `Поздравь с днём рождения нашего коллегу ${name}, занимающего должность ${position}.`;
+    const message = `Поздравь с днём рождения нашего коллегу ${name}, занимающего должность ${position}. В поздравлении сначала указывай ${position} потом ${name}.  К сотруднику обращайся на вы`;
 
     // Получаем ответ от модели
     const response = await getAnswerFromModel(accessToken, message);
@@ -204,7 +204,7 @@ async function sendBirthdayGreetings() {
 }
 
 // Планируем задачу на каждый день в 16:30 по калининградскому времени
-cron.schedule('30 16 * * *', () => {
+cron.schedule('50 18 * * *', () => {
   console.log('Запуск задачи для отправки поздравлений с днем рождения...');
   sendBirthdayGreetings();
 }, {
