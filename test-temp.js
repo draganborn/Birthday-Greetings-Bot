@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
 const axios = require('axios');
 const TelegramBot = require('node-telegram-bot-api');
+const cron = require('node-cron');
 
 // Настройка Google Sheets API
 const sheets = google.sheets('v4');
@@ -53,9 +54,10 @@ function isBirthdayInThreeDays(birthdayStr) {
   );
 }
 
-// Пример использования с проверкой дня рождения и задержкой отправки
-getDataFromSheet()
-  .then(async (data) => {
+// Функция для выполнения задачи
+async function sendBirthdayGreetings() {
+  try {
+    const data = await getDataFromSheet();
     console.log(data);
 
     // Проходим по каждой строке, извлекая нужные данные
@@ -73,7 +75,17 @@ getDataFromSheet()
         }
       }
     }
-  })
-  .catch(error => {
+  } catch (error) {
     console.error('Ошибка при получении данных:', error);
-  });
+  }
+}
+
+// Планируем задачу на каждый день в 00:25 по московскому времени
+cron.schedule('50 14 * * *', () => {
+  console.log('Запуск задачи для отправки поздравлений с днем рождения...');
+  sendBirthdayGreetings();
+}, {
+  scheduled: true,
+  timezone: "Europe/Kaliningrad" // Часовой пояс Калининграда
+});
+
