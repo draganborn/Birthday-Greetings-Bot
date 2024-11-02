@@ -38,7 +38,22 @@ async function sendMessageToTelegramWithDelay(chatId, message, delay) {
   return new Promise(resolve => setTimeout(resolve, delay)).then(() => bot.sendMessage(chatId, message));
 }
 
-// Пример использования с задержкой
+// Функция для проверки, наступает ли день рождения через 3 дня
+function isBirthdayInThreeDays(birthdayStr) {
+  const today = new Date();
+  const [day, month] = birthdayStr.split('.').map(Number); // Разбиваем дату на день и месяц
+  const birthdayThisYear = new Date(today.getFullYear(), month - 1, day); // Создаем дату без учета года рождения
+
+  const threeDaysFromNow = new Date(today);
+  threeDaysFromNow.setDate(today.getDate() + 3);
+
+  return (
+    birthdayThisYear.getDate() === threeDaysFromNow.getDate() &&
+    birthdayThisYear.getMonth() === threeDaysFromNow.getMonth()
+  );
+}
+
+// Пример использования с проверкой дня рождения и задержкой отправки
 getDataFromSheet()
   .then(async (data) => {
     console.log(data);
@@ -49,10 +64,13 @@ getDataFromSheet()
 
       // Проверяем, заполнены ли необходимые ячейки
       if (name && position && birthdayStr && chatId) {
-        const greeting = generateGreeting(name, position);
-        
-        // Отправляем сообщение с задержкой 1 секунда (1000 мс)
-        await sendMessageToTelegramWithDelay(chatId, greeting, 1000);
+        // Проверяем, наступает ли день рождения через три дня
+        if (isBirthdayInThreeDays(birthdayStr)) {
+          const greeting = generateGreeting(name, position);
+          
+          // Отправляем сообщение с задержкой 1 секунда (1000 мс)
+          await sendMessageToTelegramWithDelay(chatId, greeting, 1000);
+        }
       }
     }
   })
