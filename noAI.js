@@ -1,6 +1,5 @@
-//process.emitWarning = () => {};
-
 const { google } = require('googleapis');
+const axios = require('axios');
 const TelegramBot = require('node-telegram-bot-api');
 
 // Настройка Google Sheets API
@@ -18,7 +17,7 @@ const bot = new TelegramBot(token, { polling: true });
 async function getDataFromSheet() {
   const client = await auth.getClient();
   const spreadsheetId = '1OZwZapUykBgTBt9sRgMfodzl9F1aBar-ILIwvv7GKlI'; // Замените на ID вашей таблицы
-  const range = 'page1!A2:E101'; // Укажите диапазон, который хотите получить
+  const range = 'page1!A2:E101'; // Получаем данные со 2 по 101 строку
 
   const response = await sheets.spreadsheets.values.get({
     auth: client,
@@ -34,41 +33,47 @@ function generateGreeting(name, position) {
   return `Дорогой(ая) ${name}, поздравляем вас с днем рождения! Желаем вам успехов на должности ${position} и всего наилучшего!`;
 }
 
-// Функция для отправки сообщения в Telegram
-async function sendMessageToTelegram(chatId, message) {
-  await bot.sendMessage(chatId, message);
+// Функция для отправки сообщения в Telegram с задержкой
+async function sendMessageToTelegramWithDelay(chatId, message, delay) {
+  return new Promise(resolve => setTimeout(resolve, delay)).then(() => bot.sendMessage(chatId, message));
 }
 
 // Функция для проверки, наступает ли день рождения через 3 дня
-function isBirthdayInThreeDays(birthday) {
+function isBirthdayInThreeDays(birthdayStr) {
   const today = new Date();
-  const birthdayDate = new Date(today.getFullYear(), birthday.getMonth(), birthday.getDate());
+  const [day, month] = birthdayStr.split('.').map(Number); // Разбиваем дату на день и месяц
+  const birthdayThisYear = new Date(today.getFullYear(), month - 1, day); // Создаем дату без учета года рождения
+
   const threeDaysFromNow = new Date(today);
   threeDaysFromNow.setDate(today.getDate() + 3);
 
-  return birthdayDate.getDate() === threeDaysFromNow.getDate() && birthdayDate.getMonth() === threeDaysFromNow.getMonth();
+  return (
+    birthdayThisYear.getDate() === threeDaysFromNow.getDate() &&
+    birthdayThisYear.getMonth() === threeDaysFromNow.getMonth()
+  );
 }
 
-// Пример использования
+// Пример использования с проверкой дня рождения и задержкой отправки
 getDataFromSheet()
-  .then(data => {
-    const today = new Date(); // Определяем today здесь
-    data.forEach(row => {
+  .then(async (data) => {
+    console.log(data);
+
+    // Проходим по каждой строке, извлекая нужные данные
+    for (const row of data) {
       const [name, position, , birthdayStr, chatId] = row;
 
       // Проверяем, заполнены ли необходимые ячейки
       if (name && position && birthdayStr && chatId) {
-        const birthdayParts = birthdayStr.split('.');
-        const birthday = new Date(today.getFullYear(), birthdayParts[1] - 1, birthdayParts[0]); // Предполагаем формат ДД.ММ
-
-        if (isBirthdayInThreeDays(birthday)) {
+        // Проверяем, наступает ли день рождения через три дня
+        if (isBirthdayInThreeDays(birthdayStr)) {
           const greeting = generateGreeting(name, position);
-          sendMessageToTelegram(chatId, greeting);
+          
+          // Отправляем сообщение с задержкой 1 секунда (1000 мс)
+          await sendMessageToTelegramWithDelay(chatId, greeting, 1000);
         }
       }
-    });
+    }
   })
   .catch(error => {
     console.error('Ошибка при получении данных:', error);
   });
-
