@@ -20,7 +20,7 @@ const bot = new TelegramBot(token, { polling: true });
 // Функция для получения данных из Google Sheets
 async function getDataFromSheet() {
   const client = await auth.getClient();
-  const spreadsheetId = '1OZwZapUykBgTBt9sRgMfodzl9F1aBar-ILIwvv7GKlI'; // Замените на ID вашей таблицы
+  const spreadsheetId = '1y05NcVavF_LjX8se8oO5ASnPrI9nmvebq8neMOMWzqg'; // Замените на ID вашей таблицы
   const range = 'page1!A2:E101'; // Получаем данные со 2 по 101 строку
 
   const response = await sheets.spreadsheets.values.get({
@@ -152,7 +152,7 @@ function isBirthdayInThreeDays(birthdayStr) {
 }
 
 // Функция для генерации поздравления через GigaChat
-async function generateGreeting(name, position) {
+async function generateGreeting(name, position, project) {
   try {
     // Получаем Access Token
     const tokenData = await getAccessToken();
@@ -162,7 +162,8 @@ async function generateGreeting(name, position) {
     await getListOfModels(accessToken);
 
     // Формируем сообщение для модели
-    const message = `Поздравь с днём рождения нашего коллегу ${name}, занимающего должность ${position}. В поздравлении сначала указывай ${position} потом ${name}.  К сотруднику обращайся на вы`;
+    const message = `Поздравь с днём рождения сотрудника. Поздравления начинай так: Поздравляем с днём рождения ${position} ${project} ${name}. К сотруднику обращайся на вы, а от моего лица - мы`;
+
 
     // Получаем ответ от модели
     const response = await getAnswerFromModel(accessToken, message);
@@ -189,11 +190,11 @@ async function sendBirthdayGreetings() {
     const today = new Date();
 
     for (const row of data) {
-      const [name, position, , birthdayStr, chatId] = row;
+      const [name, position, project, birthdayStr, chatId] = row;
 
-      if (name && position && birthdayStr && chatId) {
+      if (name && position && project && birthdayStr && chatId) {
         if (isBirthdayInThreeDays(birthdayStr)) {
-          const greeting = await generateGreeting(name, position);
+          const greeting = await generateGreeting(name, position, project);
           await sendMessageToTelegramWithDelay(chatId, greeting, 1000); // Отправляем с задержкой 1 секунда
         }
       }
@@ -204,7 +205,7 @@ async function sendBirthdayGreetings() {
 }
 
 // Планируем задачу на каждый день в 16:30 по калининградскому времени
-cron.schedule('50 18 * * *', () => {
+cron.schedule('05 00 * * *', () => {
   console.log('Запуск задачи для отправки поздравлений с днем рождения...');
   sendBirthdayGreetings();
 }, {
