@@ -20,7 +20,7 @@ const bot = new TelegramBot(token, { polling: true });
 // Функция для получения данных из Google Sheets
 async function getDataFromSheet() {
   const client = await auth.getClient();
-  const spreadsheetId = '1OZwZapUykBgTBt9sRgMfodzl9F1aBar-ILIwvv7GKlI'; // Замените на ID вашей таблицы
+  const spreadsheetId = '1y05NcVavF_LjX8se8oO5ASnPrI9nmvebq8neMOMWzqg'; // Замените на ID вашей таблицы
   const range = 'page1!A2:E101'; // Получаем данные со 2 по 101 строку
 
   const response = await sheets.spreadsheets.values.get({
@@ -102,7 +102,7 @@ function getAnswerFromModel(accessToken, message) {
     "messages": [
       {
         "role": "system",
-        "content": "Ты доброжелательный hr специалист в компании Britanca project самой крупной компании Калининграда в сфере хорека."
+        "content": "Ты HR-специалист в компании Britanca project самой крупной компании Калининграда в сфере хорека. К сотруднику обращайся на вы. Не используй слова позвольте и уважаемый. К себе обращайся - мы."
       },
       {
         "role": "user",
@@ -162,7 +162,7 @@ async function generateGreeting(name, position) {
     await getListOfModels(accessToken);
 
     // Формируем сообщение для модели
-    const message = `Поздравь с днём рождения нашего коллегу ${name}, занимающего должность ${position}. В поздравлении сначала указывай ${position} потом ${name}.  К сотруднику обращайся на вы`;
+    const message = `Поздравь с днём рождения нашего коллегу ${name}, занимающего должность ${position}. В поздравлении сначала указывай ${position} потом ${name}.  `;
 
     // Получаем ответ от модели
     const response = await getAnswerFromModel(accessToken, message);
@@ -204,7 +204,7 @@ async function sendBirthdayGreetings() {
 }
 
 // Планируем задачу на каждый день в 16:30 по калининградскому времени
-cron.schedule('50 18 * * *', () => {
+cron.schedule('59 16 * * *', () => {
   console.log('Запуск задачи для отправки поздравлений с днем рождения...');
   sendBirthdayGreetings();
 }, {
