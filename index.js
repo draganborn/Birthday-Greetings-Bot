@@ -152,7 +152,7 @@ function isBirthdayInThreeDays(birthdayStr) {
 }
 
 // Функция для генерации поздравления через GigaChat
-async function generateGreeting(name, position) {
+async function generateGreeting(name, position, project) {
   try {
     // Получаем Access Token
     const tokenData = await getAccessToken();
@@ -162,7 +162,12 @@ async function generateGreeting(name, position) {
     await getListOfModels(accessToken);
 
     // Формируем сообщение для модели
+<<<<<<< HEAD
     const message = `Поздравь с днём рождения нашего коллегу ${name}, занимающего должность ${position}. В поздравлении сначала указывай ${position} потом ${name}.  `;
+=======
+    const message = `Поздравь с днём рождения сотрудника. Поздравления начинай так: Поздравляем с днём рождения ${position} ${project} ${name}. К сотруднику обращайся на вы, а от моего лица - мы`;
+
+>>>>>>> b5f1b690894d962ae7f1fa67f796602a0c9bfe0b
 
     // Получаем ответ от модели
     const response = await getAnswerFromModel(accessToken, message);
@@ -189,11 +194,11 @@ async function sendBirthdayGreetings() {
     const today = new Date();
 
     for (const row of data) {
-      const [name, position, , birthdayStr, chatId] = row;
+      const [name, position, project, birthdayStr, chatId] = row;
 
-      if (name && position && birthdayStr && chatId) {
+      if (name && position && project && birthdayStr && chatId) {
         if (isBirthdayInThreeDays(birthdayStr)) {
-          const greeting = await generateGreeting(name, position);
+          const greeting = await generateGreeting(name, position, project);
           await sendMessageToTelegramWithDelay(chatId, greeting, 1000); // Отправляем с задержкой 1 секунда
         }
       }
@@ -204,7 +209,11 @@ async function sendBirthdayGreetings() {
 }
 
 // Планируем задачу на каждый день в 16:30 по калининградскому времени
+<<<<<<< HEAD
 cron.schedule('59 16 * * *', () => {
+=======
+cron.schedule('05 00 * * *', () => {
+>>>>>>> b5f1b690894d962ae7f1fa67f796602a0c9bfe0b
   console.log('Запуск задачи для отправки поздравлений с днем рождения...');
   sendBirthdayGreetings();
 }, {
