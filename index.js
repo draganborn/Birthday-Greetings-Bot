@@ -209,11 +209,7 @@ async function sendBirthdayGreetings() {
 }
 
 // Планируем задачу на каждый день в 16:30 по калининградскому времени
-<<<<<<< HEAD
 cron.schedule('59 16 * * *', () => {
-=======
-cron.schedule('05 00 * * *', () => {
->>>>>>> b5f1b690894d962ae7f1fa67f796602a0c9bfe0b
   console.log('Запуск задачи для отправки поздравлений с днем рождения...');
   sendBirthdayGreetings();
 }, {
