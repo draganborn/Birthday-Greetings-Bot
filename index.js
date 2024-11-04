@@ -1,27 +1,29 @@
-const { google } = require('googleapis');
-const axios = require('axios');
-const TelegramBot = require('node-telegram-bot-api');
-const cron = require('node-cron');
-const qs = require('qs');
-const https = require('https');
-const fs = require('fs');
+const { google } = require("googleapis");
+const axios = require("axios");
+const TelegramBot = require("node-telegram-bot-api");
+const cron = require("node-cron");
+const qs = require("qs");
+const https = require("https");
+const fs = require("fs");
+const privateConfig = require("./config.js");
 
 // Настройка Google Sheets API
-const sheets = google.sheets('v4');
+const sheets = google.sheets("v4");
 const auth = new google.auth.GoogleAuth({
-  keyFile: '/home/max/Documents/birthday_bot/for-birthday-bot-b347cad2a667.json', // Укажите путь к вашему JSON-файлу
-  scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+  keyFile:
+    privateConfig.google.keyFile, // Укажите путь к вашему JSON-файлу
+  scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
 });
 
 // Настройка Telegram Bot
-const token = '7906410073:AAFNmNWAW4G4Uj1QWt_uKtAIKPlnrZEJUo0'; // Замените на ваш токен
+const token = privateConfig.telegram.token; // Замените на ваш токен
 const bot = new TelegramBot(token, { polling: true });
 
 // Функция для получения данных из Google Sheets
 async function getDataFromSheet() {
   const client = await auth.getClient();
-  const spreadsheetId = '1y05NcVavF_LjX8se8oO5ASnPrI9nmvebq8neMOMWzqg'; // Замените на ID вашей таблицы
-  const range = 'page1!A2:E101'; // Получаем данные со 2 по 101 строку
+  const spreadsheetId = privateConfig.google.spreadsheetId; // Замените на ID вашей таблицы
+  const range = "page1!A2:E101"; // Получаем данные со 2 по 101 строку
 
   const response = await sheets.spreadsheets.values.get({
     auth: client,
@@ -33,33 +35,37 @@ async function getDataFromSheet() {
 }
 
 // Загрузка сертификатов
-const rootCA = fs.readFileSync('/etc/ca-certificates/trust-source/anchors/russian_trusted_root_ca_pem.crt');
-const subCA = fs.readFileSync('/etc/ca-certificates/trust-source/anchors/russian_trusted_sub_ca_pem.crt');
+const rootCA = fs.readFileSync(
+ privateConfig.certificates.rootCA,
+);
+const subCA = fs.readFileSync(
+  privateConfig.certificates.subCA,
+);
 
 // Создание HTTPS агента с сертификатами
-const httpsAgent = new https.Agent({ 
+const httpsAgent = new https.Agent({
   ca: [rootCA, subCA],
-  rejectUnauthorized: false // Игнорировать самоподписанные сертификаты
+  rejectUnauthorized: false, // Игнорировать самоподписанные сертификаты
 });
 
 // Функция для получения Access Token
 function getAccessToken() {
   const data = qs.stringify({
-    'scope': 'GIGACHAT_API_PERS'
+    scope: "GIGACHAT_API_PERS", //замените на своё значение
   });
 
   const config = {
-    method: 'post',
+    method: "post",
     maxBodyLength: Infinity,
-    url: 'https://ngw.devices.sberbank.ru:9443/api/v2/oauth',
-    headers: { 
-      'Content-Type': 'application/x-www-form-urlencoded', 
-      'Accept': 'application/json', 
-      'RqUID': '1b2f1958-174f-4907-a367-10e9aebcd557', 
-      'Authorization': 'Basic NmY4OGE4ZGMtN2FhYy00NTQzLWEyNjAtYjFmODY1NzM3NjhmOjQ4MGM0NmViLTIyN2MtNDA5NC1iYTA4LTMwYzRlZjc2MTY2Yg=='
+    url: privateConfig.sberbank.oauth.url,
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+      RqUID: privateConfig.sberbank.oauth.headers.RqUID,
+      Authorization: privateConfig.sberbank.oauth.headers.Authorization,
     },
     data: data,
-    httpsAgent: httpsAgent
+    httpsAgent: httpsAgent,
   };
 
   return axios(config)
@@ -75,14 +81,14 @@ function getAccessToken() {
 // Функция для получения списка моделей
 function getListOfModels(accessToken) {
   const config = {
-    method: 'get',
+    method: "get",
     maxBodyLength: Infinity,
-    url: 'https://gigachat-preview.devices.sberbank.ru/api/v1/models',
-    headers: { 
-      'Accept': 'application/json', 
-      'Authorization': `Bearer ${accessToken}`
+    url: "https://gigachat-preview.devices.sberbank.ru/api/v1/models",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
     },
-    httpsAgent: httpsAgent
+    httpsAgent: httpsAgent,
   };
 
   return axios(config)
@@ -98,32 +104,33 @@ function getListOfModels(accessToken) {
 // Функция для получения ответа от модели
 function getAnswerFromModel(accessToken, message) {
   const data = JSON.stringify({
-    "model": "GigaChat",
-    "messages": [
+    model: "GigaChat",
+    messages: [
       {
-        "role": "system",
-        "content": "Ты HR-специалист в компании Britanca project самой крупной компании Калининграда в сфере хорека. К сотруднику обращайся на вы. Не используй слова позвольте и уважаемый. К себе обращайся - мы."
+        role: "system",
+        content:
+          "Ты HR-специалист в компании Britanca project самой крупной компании Калининграда в сфере хорека. К сотруднику обращайся на вы. Не используй слова позвольте и уважаемый. К себе обращайся - мы.",
       },
       {
-        "role": "user",
-        "content": message
-      }
+        role: "user",
+        content: message,
+      },
     ],
-    "stream": false,
-    "update_interval": 0
+    stream: false,
+    update_interval: 0,
   });
 
   const config = {
-    method: 'post',
+    method: "post",
     maxBodyLength: Infinity,
-    url: 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions',
-    headers: { 
-      'Content-Type': 'application/json', 
-      'Accept': 'application/json', 
-      'Authorization': `Bearer ${accessToken}`
+    url: "https://gigachat.devices.sberbank.ru/api/v1/chat/completions",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
     },
     httpsAgent: httpsAgent,
-    data: data
+    data: data,
   };
 
   return axios(config)
@@ -139,7 +146,7 @@ function getAnswerFromModel(accessToken, message) {
 // Функция для проверки, наступает ли день рождения через 3 дня
 function isBirthdayInThreeDays(birthdayStr) {
   const today = new Date();
-  const [day, month] = birthdayStr.split('.').map(Number); // Разбиваем дату на день и месяц
+  const [day, month] = birthdayStr.split(".").map(Number); // Разбиваем дату на день и месяц
   const birthdayThisYear = new Date(today.getFullYear(), month - 1, day); // Создаем дату без учета года рождения
 
   const threeDaysFromNow = new Date(today);
@@ -162,12 +169,8 @@ async function generateGreeting(name, position, project) {
     await getListOfModels(accessToken);
 
     // Формируем сообщение для модели
-<<<<<<< HEAD
-    const message = `Поздравь с днём рождения нашего коллегу ${name}, занимающего должность ${position}. В поздравлении сначала указывай ${position} потом ${name}.  `;
-=======
-    const message = `Поздравь с днём рождения сотрудника. Поздравления начинай так: Поздравляем с днём рождения ${position} ${project} ${name}. К сотруднику обращайся на вы, а от моего лица - мы`;
 
->>>>>>> b5f1b690894d962ae7f1fa67f796602a0c9bfe0b
+    const message = `Поздравь с днём рождения нашего коллегу ${name}, занимающего должность ${position}. В поздравлении сначала указывай ${position} потом ${name}.  `;
 
     // Получаем ответ от модели
     const response = await getAnswerFromModel(accessToken, message);
@@ -177,14 +180,16 @@ async function generateGreeting(name, position, project) {
 
     return modelAnswer;
   } catch (error) {
-    console.error('Ошибка при генерации поздравления:', error);
+    console.error("Ошибка при генерации поздравления:", error);
     return `Не удалось сгенерировать поздравление для ${name}.`;
   }
 }
 
 // Функция для отправки сообщения в Telegram с задержкой
 async function sendMessageToTelegramWithDelay(chatId, message, delay) {
-  return new Promise(resolve => setTimeout(resolve, delay)).then(() => bot.sendMessage(chatId, message));
+  return new Promise((resolve) => setTimeout(resolve, delay)).then(() =>
+    bot.sendMessage(chatId, message),
+  );
 }
 
 // Основная функция для отправки поздравлений
@@ -204,16 +209,19 @@ async function sendBirthdayGreetings() {
       }
     }
   } catch (error) {
-    console.error('Ошибка при получении данных:', error);
+    console.error("Ошибка при получении данных:", error);
   }
 }
 
 // Планируем задачу на каждый день в 16:30 по калининградскому времени
-cron.schedule('59 16 * * *', () => {
-  console.log('Запуск задачи для отправки поздравлений с днем рождения...');
-  sendBirthdayGreetings();
-}, {
-  scheduled: true,
-  timezone: "Europe/Kaliningrad" // Часовой пояс Калининграда
-});
-
+cron.schedule(
+  "* * * * *",
+  () => {
+    console.log("Запуск задачи для отправки поздравлений с днем рождения...");
+    sendBirthdayGreetings();
+  },
+  {
+    scheduled: true,
+    timezone: "Europe/Kaliningrad", // Часовой пояс Калининграда
+  },
+);
