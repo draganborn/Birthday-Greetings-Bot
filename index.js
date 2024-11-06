@@ -23,7 +23,7 @@ const bot = new TelegramBot(token, { polling: true });
 async function getDataFromSheet() {
   const client = await auth.getClient();
   const spreadsheetId = privateConfig.google.spreadsheetId; // Замените на ID вашей таблицы
-  const range = "page1!A2:E101"; // Получаем данные со 2 по 101 строку
+  const range = "page1!A2:E2007"; // Получаем данные со 2 по 101 строку
 
   const response = await sheets.spreadsheets.values.get({
     auth: client,
