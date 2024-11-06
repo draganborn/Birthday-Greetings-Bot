@@ -159,7 +159,7 @@ function isBirthdayInThreeDays(birthdayStr) {
 }
 
 // Функция для генерации поздравления через GigaChat
-async function generateGreeting(name, position, project) {
+async function generateGreeting(name, position, project, birthdayStr) {
   try {
     // Получаем Access Token
     const tokenData = await getAccessToken();
@@ -170,7 +170,7 @@ async function generateGreeting(name, position, project) {
 
     // Формируем сообщение для модели
 
-    const message = `Поздравь с днём рождения нашего коллегу ${name}, занимающего должность ${position}. В поздравлении сначала указывай ${position} потом ${name}.  `;
+    const message = `Поздравь с днём рождения нашего коллегу. Сообщение начинай так: ${birthdayStr} мы поздравляем с днем рождения нашего коллегу ${name}, занимающего должность ${position} в проекте ${project}. К сотруднику обращайся на вы, а от моего лица - мы.`;
 
     // Получаем ответ от модели
     const response = await getAnswerFromModel(accessToken, message);
@@ -203,7 +203,7 @@ async function sendBirthdayGreetings() {
 
       if (name && position && project && birthdayStr && chatId) {
         if (isBirthdayInThreeDays(birthdayStr)) {
-          const greeting = await generateGreeting(name, position, project);
+          const greeting = await generateGreeting(name, position, project, birthdayStr);
           await sendMessageToTelegramWithDelay(chatId, greeting, 1000); // Отправляем с задержкой 1 секунда
         }
       }
@@ -213,7 +213,7 @@ async function sendBirthdayGreetings() {
   }
 }
 
-// Планируем задачу на каждый день в 16:30 по калининградскому времени
+// Укажите необходимое время для запуска задачи
 cron.schedule(
   "* * * * *",
   () => {
@@ -221,7 +221,7 @@ cron.schedule(
     sendBirthdayGreetings();
   },
   {
-    scheduled: true,
-    timezone: "Europe/Kaliningrad", // Часовой пояс Калининграда
+      scheduled: true,
+      timezone: "Europe/Kaliningrad", // Часовой пояс Калининграда
   },
 );
