@@ -12,18 +12,25 @@ const sheets = google.sheets("v4");
 const auth = new google.auth.GoogleAuth({
   keyFile:
     privateConfig.google.keyFile, // Укажите путь к вашему JSON-файлу
-  scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+  scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 });
 
 // Настройка Telegram Bot
 const token = privateConfig.telegram.token; // Замените на ваш токен
-const bot = new TelegramBot(token, { polling: true });
+const bot = new TelegramBot(token, { 
+  polling: { 
+    interval: 3000, // Интервал между запросами в миллисекундах
+    params: { 
+      timeout: 10 // Новый способ указания таймаута
+    }
+  }
+});
 
 // Функция для получения данных из Google Sheets
 async function getDataFromSheet() {
   const client = await auth.getClient();
   const spreadsheetId = privateConfig.google.spreadsheetId; // Замените на ID вашей таблицы
-  const range = "page1!A2:E2007"; // Получаем данные со 2 по 101 строку
+  const range = "page1!A2:F2007"; // Получаем данные со 2 по 2007 строку, включая колонку F
 
   const response = await sheets.spreadsheets.values.get({
     auth: client,
@@ -32,6 +39,23 @@ async function getDataFromSheet() {
   });
 
   return response.data.values;
+}
+
+// Функция для обновления статуса отправленного напоминания в таблице
+async function updateReminderStatusInSheet(rowIndex, status) {
+  const client = await auth.getClient();
+  const spreadsheetId = privateConfig.google.spreadsheetId; // ID вашей таблицы
+  const range = `page1!F${rowIndex + 2}`; // Предполагая, что колонка F - это "Напоминание отправлено"
+
+  await sheets.spreadsheets.values.update({
+    auth: client,
+    spreadsheetId,
+    range,
+    valueInputOption: "RAW",
+    resource: {
+      values: [[status]],
+    },
+  });
 }
 
 // Загрузка сертификатов
@@ -109,7 +133,7 @@ function getAnswerFromModel(accessToken, message) {
       {
         role: "system",
         content:
-          "Ты HR-специалист в компании Britanca project самой крупной компании Калининграда в сфере хорека. К сотруднику обращайся на вы. Не используй слова позвольте и уважаемый. К себе обращайся - мы.",
+          "Ты HR-специалист в компании Britanca project самой крупной компании Калининграда в сфере хорека. К сотруднику обращайся на вы. Не используй слова 'позвольте' и 'уважаемый'. К себе обращайся - мы.",
       },
       {
         role: "user",
@@ -170,7 +194,7 @@ async function generateGreeting(name, position, project, birthdayStr) {
 
     // Формируем сообщение для модели
 
-    const message = `Поздравь с днём рождения нашего коллегу. Сообщение начинай так: ${birthdayStr} мы поздравляем с днем рождения нашего коллегу ${name}, занимающего должность ${position} в проекте ${project}. К сотруднику обращайся на вы, а от моего лица - мы.`;
+    const message = `Поздравь с днём рождения нашего коллегу. Сообщение начинай так: ${birthdayStr} мы поздравляем с днем рождения нашего коллегу ${name}, занимающего должность ${position} в проекте ${project}.`;
 
     // Получаем ответ от модели
     const response = await getAnswerFromModel(accessToken, message);
@@ -198,19 +222,57 @@ async function sendBirthdayGreetings() {
     const data = await getDataFromSheet();
     const today = new Date();
 
-    for (const row of data) {
-      const [name, position, project, birthdayStr, chatId] = row;
+    for (const [index, row] of data.entries()) { // Используем entries для получения индекса
+      const [name, position, project, birthdayStr, chatId, reminderSent] = row; // Добавляем reminderSent
 
       if (name && position && project && birthdayStr && chatId) {
-        if (isBirthdayInThreeDays(birthdayStr)) {
+        // Проверяем, наступает ли день рождения завтра
+        const isBirthdayTomorrow = isBirthdayInDays(birthdayStr, 1);
+        // Проверяем, наступает ли день рождения через 2 дня
+        const isBirthdayInTwoDays = isBirthdayInDays(birthdayStr, 2);
+        // Проверяем, наступает ли день рождения через 3 дня
+        const isBirthdayInThreeDays = isBirthdayInDays(birthdayStr, 3);
+
+        // Если день рождения завтра и напоминание не было отправлено
+        if (isBirthdayTomorrow && reminderSent !== 'yes') {
           const greeting = await generateGreeting(name, position, project, birthdayStr);
           await sendMessageToTelegramWithDelay(chatId, greeting, 1000); // Отправляем с задержкой 1 секунда
+          await updateReminderStatusInSheet(index, 'yes'); // Обновляем статус на 'yes'
+        }
+
+        // Если день рождения через 2 дня и напоминание не было отправлено
+        if (isBirthdayInTwoDays && reminderSent !== 'yes') {
+          const greeting = await generateGreeting(name, position, project, birthdayStr);
+          await sendMessageToTelegramWithDelay(chatId, greeting, 1000); // Отправляем с задержкой 1 секунда
+          await updateReminderStatusInSheet(index, 'yes'); // Обновляем статус на 'yes'
+        }
+
+        // Если день рождения через 3 дня и напоминание не было отправлено
+        if (isBirthdayInThreeDays && reminderSent !== 'yes') {
+          const greeting = await generateGreeting(name, position, project, birthdayStr);
+          await sendMessageToTelegramWithDelay(chatId, greeting, 1000); // Отправляем с задержкой 1 секунда
+          await updateReminderStatusInSheet(index, 'yes'); // Обновляем статус на 'yes'
         }
       }
     }
   } catch (error) {
     console.error("Ошибка при получении данных:", error);
   }
+}
+
+// Функция для проверки, наступает ли день рождения через N дней
+function isBirthdayInDays(birthdayStr, days) {
+  const today = new Date();
+  const [day, month] = birthdayStr.split(".").map(Number); // Разбиваем дату на день и месяц
+  const birthdayThisYear = new Date(today.getFullYear(), month - 1, day); // Создаем дату без учета года рождения
+
+  const targetDate = new Date(today);
+  targetDate.setDate(today.getDate() + days); // Устанавливаем целевую дату
+
+  return (
+    birthdayThisYear.getDate() === targetDate.getDate() &&
+    birthdayThisYear.getMonth() === targetDate.getMonth()
+  );
 }
 
 // Укажите необходимое время для запуска задачи
