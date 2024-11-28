@@ -194,7 +194,7 @@ async function generateGreeting(name, position, project, birthdayStr) {
 
     // Формируем сообщение для модели
 
-    const message = `Поздравь с днём рождения нашего коллегу. Сообщение начинай так: ${birthdayStr} мы поздравляем с днем рождения нашего коллегу ${name}, занимающего должность ${position} в проекте ${project}.`;
+    const message = `Поздравь с днём рождения нашего коллегу. Сообщение начинай так: ${birthdayStr} мы поздравляем с днем рождения нашего коллегу ${name}, занимающего должность ${position} в проекте ${project}. (А дальше можно продолжать от себя) `;
 
     // Получаем ответ от модели
     const response = await getAnswerFromModel(accessToken, message);
@@ -275,7 +275,43 @@ function isBirthdayInDays(birthdayStr, days) {
   );
 }
 
-// Укажите необходимое время для запуска задачи
+// Функция для очистки ячеек F2 по F2007
+async function clearCells() {
+  try {
+    const client = await auth.getClient();
+    const spreadsheetId = privateConfig.google.spreadsheetId; // ID вашей таблицы
+    const range = "page1!F2:F2007"; // Диапазон ячеек для очистки
+
+    await sheets.spreadsheets.values.update({
+      auth: client,
+      spreadsheetId,
+      range,
+      valueInputOption: "RAW",
+      resource: {
+        values: Array(2006).fill([null]), // Заполняем массив null для очистки ячеек
+      },
+    });
+
+    console.log("Ячейки F2:F2007 успешно очищены.");
+  } catch (error) {
+    console.error("Ошибка при очистке ячеек:", error);
+  }
+}
+
+// Запланируйте задачу на 1 января в 00:10 по калининградскому времени 10 0 1 1 *
+cron.schedule(
+  "* * * * *", // Каждое 1 января в 00:10
+  () => {
+    console.log("Запуск задачи для очистки ячеек F2:F2007...");
+    clearCells();
+  },
+  {
+    scheduled: true,
+    timezone: "Europe/Kaliningrad", // Часовой пояс Калининграда
+  }
+);
+
+// 15 0 * * * каждую полночь запуск задачи для отправки поздравлений
 cron.schedule(
   "* * * * *",
   () => {
@@ -283,7 +319,7 @@ cron.schedule(
     sendBirthdayGreetings();
   },
   {
-      scheduled: true,
-      timezone: "Europe/Kaliningrad", // Часовой пояс Калининграда
+    scheduled: true,
+    timezone: "Europe/Kaliningrad", // Часовой пояс Калининграда
   },
 );
