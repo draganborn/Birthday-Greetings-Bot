@@ -288,7 +288,7 @@ async function clearCells() {
       range,
       valueInputOption: "RAW",
       resource: {
-        values: Array(2006).fill([null]), // Заполняем массив null для очистки ячеек
+        values: Array(2006).fill([""]), // Заполняем массив null для очистки ячеек
       },
     });
 
